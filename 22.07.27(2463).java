@@ -2,6 +2,7 @@ import java.awt.desktop.PreferencesEvent;
 import java.awt.image.AreaAveragingScaleFilter;
 import java.io.*;
 import java.nio.CharBuffer;
+import java.time.chrono.MinguoEra;
 import java.time.chrono.ThaiBuddhistEra;
 import java.util.*;
 
@@ -17,30 +18,29 @@ class P{
 
 public class Main {
     static int n,m;
-    static int []Size;
+    static long []Size;
     static int []Parent;
 
-    static int DFS(int y, int x, int idx){
-        Queue <P> q = new LinkedList<>();
-        q.add(new P(y,x));
-        visit[y][x] = true;
-        group[y][x] = idx;
-        int cnt =1;
-        while(!q.isEmpty()) {
-            int h_x = q.peek().x;
-            int h_y = q.peek().y;
-            q.remove();
-            for (int i = 0; i < 4; i++) {
-                int n_x = h_x + dx[i];
-                int n_y = h_y + dy[i];
-                if (n_x < 0 || n_x >= m || n_y < 0 || n_y >= n || visit[n_y][n_x] == true || board[n_y][n_x] != 0)continue;
-                visit[n_y][n_x] = true;
-                q.add(new P(n_y, n_x));
-                group[n_y][n_x] = idx;
-                cnt++;
-            }}
-            return cnt;
+    static int GetParent(int a){
+        if(a == Parent[a])return a;
+        return GetParent(Parent[a]);
+    }
+    static void mergeParent(int a, int b){
+        if(Size[a] > Size[b]){
+            Parent[b] = a;
+            Size[a] += Size[b];
+            Size[b] = 1;
         }
+        else{
+            Parent[a] = b;
+            Size[b] += Size[a];
+            Size[a] = 1;
+        }
+    }
+
+    static boolean cmp (P a, P b){
+        return a.w > b.w;
+    }
 
     public static void main(String args[]) throws IOException {
         Scanner sc = new Scanner(System.in);
@@ -52,27 +52,39 @@ public class Main {
         //ArrayList<P> input = new ArrayList<>();
         P [] input = new P[m];
         Parent = new int[n];
-        Size = new int[n];
-        System.out.println(sb);
+        Size = new long[n];
+        for(int i=0; i<n; i++){
+            Parent[i] = i;
+            Size[i] = 1;
+        }
+        long sum =0;
+        long answer = 0;
+        for(int i=0; i<m; i++){
+            st = new StringTokenizer(br.readLine());
+            int a = Integer.parseInt(st.nextToken()) - 1;
+            int b = Integer.parseInt(st.nextToken()) - 1;
+            int c = Integer.parseInt(st.nextToken());
+            input[i] = new P(a,b,c);
+            sum+=input[i].w;
+        }
+        Arrays.sort(input, new Comparator<P>() {
+            @Override
+            public int compare(P s1, P s2) {
+                if(s1.w > s2.w)return -1;
+                else return 1;
+            }
+        });
+
+        for(int i=0; i<m; i++){
+            int a = GetParent(input[i].y);
+            int b = GetParent(input[i].x);
+            if(a!=b){
+                answer += (((Size[a] * Size[b])%1000000000) * sum) % 1000000000;
+                mergeParent(a,b);
+            }
+            sum -= input[i].w;
+        }
+        System.out.println(answer%1000000000);
         //bw.write(sb.toString());
-    }
-    static void find(int y, int x){
-        if(board[y][x] == 0){
-            sb.append("0");
-            return;
-        }
-        HashSet<Integer> set  = new HashSet<>();
-        for(int i=0; i<4; i++){
-            int nx = x + dx[i];
-            int ny = y + dy[i];
-            if(nx <0 || nx >=m || ny<0 || ny >=n)continue;
-            set.add(group[ny][nx]);
-        }
-        int cnt = 1;
-        for(int e : set){
-            cnt += groupCount.get(e);
-        }
-        cnt %= 10;
-        sb.append(cnt);
     }
 }
